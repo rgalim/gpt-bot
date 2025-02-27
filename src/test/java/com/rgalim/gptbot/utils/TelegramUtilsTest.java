@@ -4,12 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rgalim.gptbot.exception.TelegramApiException;
 import com.rgalim.gptbot.model.telegram.TelegramErrorResponse;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.test.StepVerifier;
 
@@ -29,7 +29,7 @@ class TelegramUtilsTest {
             TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 404, "Not found");
             ClientResponse clientResponse = ClientResponse
                     .create(HttpStatusCode.valueOf(404))
-                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .body(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
                     .build();
 
@@ -43,7 +43,7 @@ class TelegramUtilsTest {
         void whenInvalidErrorResponseThenMapToMonoError() {
             ClientResponse clientResponse = ClientResponse
                     .create(HttpStatusCode.valueOf(404))
-                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .body("Something went wrong")
                     .build();
 
