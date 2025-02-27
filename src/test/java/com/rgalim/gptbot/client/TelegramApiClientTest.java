@@ -2,7 +2,6 @@ package com.rgalim.gptbot.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rgalim.gptbot.config.TelegramProperties;
-import com.rgalim.gptbot.exception.TelegramApiException;
 import com.rgalim.gptbot.model.telegram.*;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -42,7 +41,7 @@ class TelegramApiClientTest {
     @BeforeEach
     void initialize() {
         String url = String.format("http://localhost:%s", mockWebServer.getPort());
-        TelegramProperties properties = new TelegramProperties(url, "12345:abcd", 1);
+        TelegramProperties properties = new TelegramProperties(url, "12345:abcd", 1, 1, 100);
         telegramApiClient = new TelegramApiClient(WebClient.create(url), properties);
     }
 
@@ -74,18 +73,30 @@ class TelegramApiClientTest {
         }
 
         @Test
-        void whenErrorResponseFromTelegramApiThenThrowTelegramException() throws Exception {
-            TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 404, "Not found");
+        void whenFailedRequestWithTelegramApiExceptionThenRetry() throws Exception {
+            Message message = new Message(
+                    1,
+                    new User(1, false, "FirstName", "LastName", "username"),
+                    12345,
+                    "Message text");
+            List<Update> updates = List.of(new Update(1, message));
+            UpdatesResponse updatesResponse = new UpdatesResponse(true, updates);
+
+            TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 500, "Something went wrong");
 
             mockWebServer.enqueue(new MockResponse()
                     .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .setBody(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
-                    .setResponseCode(404));
+                    .setResponseCode(500));
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(updatesResponse))
+                    .setResponseCode(200));
 
             StepVerifier.create(telegramApiClient.fetchBotUpdates(LAST_ID))
-                    .expectErrorMatches(error -> error instanceof TelegramApiException &&
-                            error.getMessage().equals("Failed to get bot updates. Error: Not found"))
-                    .verify();
+                    .expectNext(updatesResponse)
+                    .verifyComplete();
 
             RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
@@ -94,15 +105,36 @@ class TelegramApiClientTest {
         }
 
         @Test
-        void whenUnexpectedResponseThenThrowTelegramException() throws Exception {
+        void whenAllRetryAttemptsFailedThenReturnEmptyMono() throws Exception {
+            TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 500, "Something went wrong");
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
+                    .setResponseCode(500));
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
+                    .setResponseCode(500));
+
+            StepVerifier.create(telegramApiClient.fetchBotUpdates(LAST_ID))
+                    .verifyComplete();
+
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+            assertEquals("GET", recordedRequest.getMethod());
+            assertEquals("/bot12345:abcd/getUpdates?offset=1&timeout=1", recordedRequest.getPath());
+        }
+
+        @Test
+        void whenUnexpectedResponseThenReturnEmptyMono() throws Exception {
             mockWebServer.enqueue(new MockResponse()
                     .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .setBody("Unexpected response"));
 
             StepVerifier.create(telegramApiClient.fetchBotUpdates(LAST_ID))
-                    .expectErrorMatches(error -> error instanceof TelegramApiException &&
-                            error.getMessage().contains("JSON decoding error"))
-                    .verify();
+                    .verifyComplete();
 
             RecordedRequest recordedRequest = mockWebServer.takeRequest();
 

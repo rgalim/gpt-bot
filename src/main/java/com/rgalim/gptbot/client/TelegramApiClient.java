@@ -1,15 +1,17 @@
 package com.rgalim.gptbot.client;
 
 import com.rgalim.gptbot.config.TelegramProperties;
+import com.rgalim.gptbot.exception.TelegramApiException;
 import com.rgalim.gptbot.model.telegram.UpdatesResponse;
-import com.rgalim.gptbot.utils.TelegramUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.rgalim.gptbot.utils.TelegramUtils.*;
@@ -36,6 +38,19 @@ public class TelegramApiClient {
                         response -> mapToTelegramErrorResponse(GET_UPDATES_ERROR_MESSAGE, response))
                 .bodyToMono(UpdatesResponse.class)
                 .doOnSuccess(response ->  log.info("Successfully got bot updates: {}", response.result()))
-                .onErrorMap(TelegramUtils::mapToTelegramApiException);
+                .doOnError(error -> log.error(error.getMessage()))
+                .retryWhen(getRetrySpec("getUpdates"))
+                .onErrorResume(error -> Mono.empty());
+    }
+
+    private Retry getRetrySpec(String message) {
+        return Retry.backoff(
+                        properties.retryAttempts(),
+                        Duration.ofMillis(properties.retryBackoff())
+                )
+                .filter(TelegramApiException.class::isInstance)
+                .doBeforeRetry(retrySignal ->
+                        log.warn("Retrying to call {} because of error: {}. Attempt #{}",
+                                message, retrySignal.failure().getMessage(), retrySignal.totalRetries()));
     }
 }
