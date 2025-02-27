@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: gpt-bot
+
+web:
+  max-idle-time: 1
+  max-life-time: 10
+
+telegram:
+  url: ${TELEGRAM_URL}
+  token: ${TELEGRAM_TOKEN}
+  timeout: 30
