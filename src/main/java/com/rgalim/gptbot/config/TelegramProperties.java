@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record TelegramProperties(
         @NonNull String url,
         @NonNull String token,
-        @NonNull Integer timeout
+        @NonNull Integer timeout,
+        @NonNull Integer retryAttempts,
+        @NonNull Integer retryBackoff
 ) {
 }

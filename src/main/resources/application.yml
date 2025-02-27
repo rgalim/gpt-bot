@@ -10,3 +10,5 @@ telegram:
   url: ${TELEGRAM_URL}
   token: ${TELEGRAM_TOKEN}
   timeout: 30
+  retry-attempts: 2
+  retry-backoff: 100
