@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.0.4] - 2025-03-03
+- Implement webhook endpoint
+
 ## [0.0.3] - 2025-02-27
 - Implement telegram api client
 
