@@ -1,10 +1,7 @@
 package com.rgalim.gptbot.service;
 
 import com.rgalim.gptbot.client.TelegramApiClient;
-import com.rgalim.gptbot.model.telegram.Message;
-import com.rgalim.gptbot.model.telegram.Update;
-import com.rgalim.gptbot.model.telegram.UpdatesResponse;
-import com.rgalim.gptbot.model.telegram.User;
+import com.rgalim.gptbot.model.telegram.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +23,9 @@ class TelegramBotServiceTest {
 
     @Mock
     private TelegramApiClient telegramApiClient;
+
+    @Mock
+    private TelegramCommandService telegramCommandService;
 
     @InjectMocks
     private TelegramBotService telegramBotService;
@@ -111,6 +111,42 @@ class TelegramBotServiceTest {
             assertEquals(0, capturedValues.get(0));
             assertEquals(1, capturedValues.get(1));
             assertEquals(1, capturedValues.get(2));
+        }
+    }
+
+    @Nested
+    class HandleUpdate {
+
+        @Test
+        void whenTextMessageInUpdateThenHandle() {
+            Message message = new Message(
+                    1,
+                    new User(1, false, "FirstName", "LastName", "username"),
+                    12345,
+                    "Message text");
+            Update update = new Update(1, message);
+
+            when(telegramCommandService.isCommand("Message text")).thenReturn(false);
+
+            telegramBotService.handleUpdate(update);
+
+            verify(telegramCommandService, never()).handleCommand(any());
+        }
+
+        @Test
+        void whenCommandInUpdateThenHandle() {
+            Message message = new Message(
+                    1,
+                    new User(1, false, "FirstName", "LastName", "username"),
+                    12345,
+                    "/start");
+            Update update = new Update(1, message);
+
+            when(telegramCommandService.isCommand("/start")).thenReturn(true);
+
+            telegramBotService.handleUpdate(update);
+
+            verify(telegramCommandService).handleCommand(Command.START);
         }
     }
 }

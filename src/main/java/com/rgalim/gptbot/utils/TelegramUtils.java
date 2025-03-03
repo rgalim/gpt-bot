@@ -17,6 +17,7 @@ public final class TelegramUtils {
     public static final String GET_UPDATES_ENDPOINT = "/getUpdates";
     public static final String OFFSET_PARAM = "offset";
     public static final String TIMEOUT_PARAM = "timeout";
+    public static final String BOT_AUTH_HEADER = "X-Telegram-Bot-Api-Secret-Token";
 
     public static final String GET_UPDATES_ERROR_MESSAGE = "Failed to get bot updates. Error: ";
 
@@ -32,5 +33,9 @@ public final class TelegramUtils {
             return apiException;
         }
         return new TelegramApiException(GET_UPDATES_ERROR_MESSAGE + error.getMessage());
+    }
+
+    public static void validateToken(String token) {
+        // TODO: implement
     }
 }

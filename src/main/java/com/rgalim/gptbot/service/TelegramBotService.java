@@ -2,6 +2,8 @@ package com.rgalim.gptbot.service;
 
 
 import com.rgalim.gptbot.client.TelegramApiClient;
+import com.rgalim.gptbot.model.telegram.Command;
+import com.rgalim.gptbot.model.telegram.Message;
 import com.rgalim.gptbot.model.telegram.Update;
 import com.rgalim.gptbot.model.telegram.UpdatesResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +13,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.springframework.util.StringUtils.hasText;
 
 @Slf4j
 @Service
@@ -19,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TelegramBotService {
 
     private final TelegramApiClient telegramApiClient;
+    private final TelegramCommandService telegramCommandService;
 
     private final AtomicLong lastUpdateId = new AtomicLong(0);
 
@@ -26,6 +32,23 @@ public class TelegramBotService {
         return Mono.defer(() -> telegramApiClient.fetchBotUpdates(lastUpdateId))
                 .doOnNext(this::updateOffset)
                 .repeat();
+    }
+
+    public void handleUpdate(Update update) {
+        Message message = update.message();
+        if (message != null && hasText(message.text())) {
+            String text = message.text();
+            if (telegramCommandService.isCommand(text)) {
+                Optional<Command> optionalCommand = Command.from(text);
+                if (optionalCommand.isPresent()) {
+                    telegramCommandService.handleCommand(optionalCommand.get());
+                } else {
+                    log.warn("Command {} is not supported", text);
+                }
+            } else {
+                log.info("Received message from user {}: {}", message.from().username(), message.text());
+            }
+        }
     }
 
     private void updateOffset(UpdatesResponse response) {
