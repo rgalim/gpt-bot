@@ -6,12 +6,12 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class CommandTest {
+class CommandTypeTest {
 
     @Test
     void whenValidCommandThenCreateFromText() {
 
-        Optional<Command> command = Command.from("/start");
+        Optional<CommandType> command = CommandType.from("/start");
 
         assertTrue(command.isPresent());
     }
@@ -19,7 +19,7 @@ class CommandTest {
     @Test
     void whenInvalidCommandThenReturnEmptyOptional() {
 
-        Optional<Command> command = Command.from("/unknown");
+        Optional<CommandType> command = CommandType.from("/unknown");
 
         assertFalse(command.isPresent());
     }

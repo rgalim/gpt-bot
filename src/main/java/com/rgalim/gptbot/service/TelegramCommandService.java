@@ -5,6 +5,9 @@ import com.rgalim.gptbot.model.telegram.Command;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import static com.rgalim.gptbot.utils.TelegramUtils.*;
 
 @Slf4j
 @Service
@@ -17,24 +20,29 @@ public class TelegramCommandService {
         return text.startsWith("/");
     }
 
-    public void handleCommand(Command command) {
-        switch (command) {
-            case START -> handleStartCommand();
+    public Mono<Void> handleCommand(Command command) {
+        return switch (command.commandType()) {
+            case START -> handleStartCommand(command);
             case HELP -> handleHelpCommand();
             case SETTINGS -> handleSettingsCommand();
-            default -> log.warn("Received unsupported command: {}", command);
-        }
+        };
     }
 
-    private void handleStartCommand() {
-        log.warn("Command /start is not implemented");
+    private Mono<Void> handleStartCommand(Command command) {
+        String from = command.from();
+        log.info("Handling START command from {}", from);
+
+        return telegramApiClient.sendMessage(START_COMMAND_TEXT, from)
+                .then();
     }
 
-    private void handleHelpCommand() {
+    private Mono<Void> handleHelpCommand() {
         log.warn("Command /help is not implemented");
+        return Mono.empty();
     }
 
-    private void handleSettingsCommand() {
+    private Mono<Void> handleSettingsCommand() {
         log.warn("Command /settings is not implemented");
+        return Mono.empty();
     }
 }

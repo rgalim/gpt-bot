@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.rgalim.gptbot.utils.TestConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -35,19 +36,11 @@ class TelegramBotServiceTest {
 
         @Test
         void whenSuccessfulResponseFromTelegramApiThenReturnUpdatesResponse() {
-            Message message1 = new Message(
-                    1,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    12345,
-                    "Message text1");
+            Message message1 = new Message(1, USER, 12345, "Message text1");
             List<Update> updates1 = List.of(new Update(1, message1));
             UpdatesResponse updatesResponse1 = new UpdatesResponse(true, updates1);
 
-            Message message2 = new Message(
-                    2,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    45678,
-                    "Message text2");
+            Message message2 = new Message(2, USER, 45678, "Message text2");
             List<Update> updates2 = List.of(new Update(2, message2));
             UpdatesResponse updatesResponse2 = new UpdatesResponse(true, updates2);
 
@@ -72,19 +65,11 @@ class TelegramBotServiceTest {
 
         @Test
         void whenFailedResponseFromTelegramApiThenRepeat() {
-            Message message1 = new Message(
-                    1,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    12345,
-                    "Message text1");
+            Message message1 = new Message(1, USER, 12345, "Message text1");
             List<Update> updates1 = List.of(new Update(1, message1));
             UpdatesResponse updatesResponse1 = new UpdatesResponse(true, updates1);
 
-            Message message2 = new Message(
-                    2,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    45678,
-                    "Message text2");
+            Message message2 = new Message(2, USER, 45678, "Message text2");
             List<Update> updates2 = List.of(new Update(2, message2));
             UpdatesResponse updatesResponse2 = new UpdatesResponse(true, updates2);
 
@@ -119,34 +104,39 @@ class TelegramBotServiceTest {
 
         @Test
         void whenTextMessageInUpdateThenHandle() {
-            Message message = new Message(
-                    1,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    12345,
-                    "Message text");
-            Update update = new Update(1, message);
-
             when(telegramCommandService.isCommand("Message text")).thenReturn(false);
 
-            telegramBotService.handleUpdate(update);
+            StepVerifier.create(telegramBotService.handleUpdate(UPDATE))
+                    .verifyComplete();
 
             verify(telegramCommandService, never()).handleCommand(any());
         }
 
         @Test
         void whenCommandInUpdateThenHandle() {
-            Message message = new Message(
-                    1,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    12345,
-                    "/start");
+            Message message = new Message(1, USER, 12345, "/start");
             Update update = new Update(1, message);
 
+            Command command = new Command(CommandType.START, "1", "/start");
+
             when(telegramCommandService.isCommand("/start")).thenReturn(true);
+            when(telegramCommandService.handleCommand(command)).thenReturn(Mono.empty());
 
-            telegramBotService.handleUpdate(update);
+            StepVerifier.create(telegramBotService.handleUpdate(update))
+                    .verifyComplete();
+        }
 
-            verify(telegramCommandService).handleCommand(Command.START);
+        @Test
+        void whenUnsupportedCommandInUpdateThenDoNothing() {
+            Message message = new Message(1, USER, 12345, "/unknown");
+            Update update = new Update(1, message);
+
+            when(telegramCommandService.isCommand("/unknown")).thenReturn(true);
+
+            StepVerifier.create(telegramBotService.handleUpdate(update))
+                    .verifyComplete();
+
+            verify(telegramCommandService, never()).handleCommand(any());
         }
     }
 }

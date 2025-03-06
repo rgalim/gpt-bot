@@ -23,8 +23,6 @@ public class TelegramBotController {
 
         validateToken(token);
 
-        telegramBotService.handleUpdate(updateRequest);
-
-        return Mono.empty();
+        return telegramBotService.handleUpdate(updateRequest);
     }
 }
