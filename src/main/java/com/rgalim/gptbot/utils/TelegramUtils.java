@@ -15,11 +15,13 @@ public final class TelegramUtils {
 
     public static final String BOT_PATH = "/bot";
     public static final String GET_UPDATES_ENDPOINT = "/getUpdates";
+    public static final String SEND_MESSAGE_ENDPOINT = "/sendMessage";
     public static final String OFFSET_PARAM = "offset";
     public static final String TIMEOUT_PARAM = "timeout";
     public static final String BOT_AUTH_HEADER = "X-Telegram-Bot-Api-Secret-Token";
 
     public static final String GET_UPDATES_ERROR_MESSAGE = "Failed to get bot updates. Error: ";
+    public static final String SEND_TEXT_ERROR_MESSAGE = "Failed to send message. Error: ";
 
     public static Mono<TelegramApiException> mapToTelegramErrorResponse(String message, ClientResponse response) {
         return response

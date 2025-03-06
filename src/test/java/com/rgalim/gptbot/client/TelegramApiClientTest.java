@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.rgalim.gptbot.utils.TestConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TelegramApiClientTest {
@@ -27,22 +28,19 @@ class TelegramApiClientTest {
 
     private TelegramApiClient telegramApiClient;
 
-    @BeforeAll
-    static void setUp() throws IOException {
+    @BeforeEach
+    void initialize() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-    }
 
-    @AfterAll
-    static void shutDown() throws IOException {
-        mockWebServer.shutdown();
-    }
-
-    @BeforeEach
-    void initialize() {
         String url = String.format("http://localhost:%s", mockWebServer.getPort());
         TelegramProperties properties = new TelegramProperties(url, "12345:abcd", 1, 1, 100);
         telegramApiClient = new TelegramApiClient(WebClient.create(url), properties);
+    }
+
+    @AfterEach
+    void shutDown() throws IOException {
+        mockWebServer.shutdown();
     }
 
     @Nested
@@ -50,12 +48,7 @@ class TelegramApiClientTest {
 
         @Test
         void whenSuccessfulResponseFromTelegramApiThenReturnUpdatesResponse() throws Exception {
-            Message message = new Message(
-                    1,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    12345,
-                    "Message text");
-            List<Update> updates = List.of(new Update(1, message));
+            List<Update> updates = List.of(new Update(1, MESSAGE));
             UpdatesResponse updatesResponse = new UpdatesResponse(true, updates);
 
             mockWebServer.enqueue(new MockResponse()
@@ -74,12 +67,7 @@ class TelegramApiClientTest {
 
         @Test
         void whenFailedRequestWithTelegramApiExceptionThenRetry() throws Exception {
-            Message message = new Message(
-                    1,
-                    new User(1, false, "FirstName", "LastName", "username"),
-                    12345,
-                    "Message text");
-            List<Update> updates = List.of(new Update(1, message));
+            List<Update> updates = List.of(new Update(1, MESSAGE));
             UpdatesResponse updatesResponse = new UpdatesResponse(true, updates);
 
             TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 500, "Something went wrong");
@@ -140,6 +128,91 @@ class TelegramApiClientTest {
 
             assertEquals("GET", recordedRequest.getMethod());
             assertEquals("/bot12345:abcd/getUpdates?offset=1&timeout=1", recordedRequest.getPath());
+        }
+    }
+
+    @Nested
+    class SendMessage {
+
+        @Test
+        void whenSuccessfullySentMessageThenReturnMessageResponse() throws Exception {
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(new SendMessageResponse(true, MESSAGE))));
+
+            StepVerifier.create(telegramApiClient.sendMessage("Message text", "123"))
+                    .expectNext(MESSAGE)
+                    .verifyComplete();
+
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+            assertEquals("POST", recordedRequest.getMethod());
+            assertEquals("/bot12345:abcd/sendMessage", recordedRequest.getPath());
+            assertEquals("{\"chat_id\":\"123\",\"text\":\"Message text\"}", recordedRequest.getBody().readUtf8());
+        }
+
+        @Test
+        void whenFailedToSendMessageThenRetry() throws Exception {
+            TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 500, "Something went wrong");
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
+                    .setResponseCode(500));
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(new SendMessageResponse(true, MESSAGE))));
+
+            StepVerifier.create(telegramApiClient.sendMessage("Message text", "123"))
+                    .expectNext(MESSAGE)
+                    .verifyComplete();
+
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+            assertEquals("POST", recordedRequest.getMethod());
+            assertEquals("/bot12345:abcd/sendMessage", recordedRequest.getPath());
+            assertEquals("{\"chat_id\":\"123\",\"text\":\"Message text\"}", recordedRequest.getBody().readUtf8());
+        }
+
+        @Test
+        void whenAllRetryAttemptsForSendingMessageFailedThenReturnEmptyMono() throws Exception {
+            TelegramErrorResponse telegramErrorResponse = new TelegramErrorResponse(false, 500, "Something went wrong");
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
+                    .setResponseCode(500));
+
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody(OBJECT_MAPPER.writeValueAsString(telegramErrorResponse))
+                    .setResponseCode(500));
+
+            StepVerifier.create(telegramApiClient.sendMessage("Message text", "123"))
+                    .verifyComplete();
+
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+            assertEquals("POST", recordedRequest.getMethod());
+            assertEquals("/bot12345:abcd/sendMessage", recordedRequest.getPath());
+            assertEquals("{\"chat_id\":\"123\",\"text\":\"Message text\"}", recordedRequest.getBody().readUtf8());
+        }
+
+        @Test
+        void whenUnexpectedResponseForSendingMessageThenReturnEmptyMono() throws Exception {
+            mockWebServer.enqueue(new MockResponse()
+                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                    .setBody("Unexpected response"));
+
+            StepVerifier.create(telegramApiClient.sendMessage("Message text", "123"))
+                    .verifyComplete();
+
+            RecordedRequest recordedRequest = mockWebServer.takeRequest();
+
+            assertEquals("POST", recordedRequest.getMethod());
+            assertEquals("/bot12345:abcd/sendMessage", recordedRequest.getPath());
+            assertEquals("{\"chat_id\":\"123\",\"text\":\"Message text\"}", recordedRequest.getBody().readUtf8());
         }
     }
 }
