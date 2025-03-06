@@ -2,10 +2,7 @@ package com.rgalim.gptbot.service;
 
 
 import com.rgalim.gptbot.client.TelegramApiClient;
-import com.rgalim.gptbot.model.telegram.Command;
-import com.rgalim.gptbot.model.telegram.Message;
-import com.rgalim.gptbot.model.telegram.Update;
-import com.rgalim.gptbot.model.telegram.UpdatesResponse;
+import com.rgalim.gptbot.model.telegram.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,21 +31,25 @@ public class TelegramBotService {
                 .repeat();
     }
 
-    public void handleUpdate(Update update) {
+    public Mono<Void> handleUpdate(Update update) {
         Message message = update.message();
         if (message != null && hasText(message.text())) {
             String text = message.text();
             if (telegramCommandService.isCommand(text)) {
-                Optional<Command> optionalCommand = Command.from(text);
-                if (optionalCommand.isPresent()) {
-                    telegramCommandService.handleCommand(optionalCommand.get());
+                Optional<CommandType> optionalCommandType = CommandType.from(text);
+                if (optionalCommandType.isPresent()) {
+                    String userId = String.valueOf(message.from().id());
+                    Command command = new Command(optionalCommandType.get(), userId, message.text());
+                    return telegramCommandService.handleCommand(command);
                 } else {
                     log.warn("Command {} is not supported", text);
                 }
             } else {
                 log.info("Received message from user {}: {}", message.from().username(), message.text());
+                // TODO: implement message handling
             }
         }
+        return Mono.empty();
     }
 
     private void updateOffset(UpdatesResponse response) {

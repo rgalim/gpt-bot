@@ -22,6 +22,7 @@ public final class TelegramUtils {
 
     public static final String GET_UPDATES_ERROR_MESSAGE = "Failed to get bot updates. Error: ";
     public static final String SEND_TEXT_ERROR_MESSAGE = "Failed to send message. Error: ";
+    public static final String START_COMMAND_TEXT = "Hello! I'm a GPT bot. How can I help?";
 
     public static Mono<TelegramApiException> mapToTelegramErrorResponse(String message, ClientResponse response) {
         return response
