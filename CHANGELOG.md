@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.1.0] - 2025-03-06
+- Implement handler for start command
+
 ## [0.0.4] - 2025-03-03
 - Implement webhook endpoint
 
