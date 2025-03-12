@@ -1,8 +1,10 @@
 package com.rgalim.gptbot.controller;
 
 import com.rgalim.gptbot.exception.TelegramApiException;
+import com.rgalim.gptbot.exception.TokenValidationException;
 import com.rgalim.gptbot.model.telegram.ErrorResponse;
 import com.rgalim.gptbot.service.TelegramBotService;
+import com.rgalim.gptbot.service.TokenValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -23,32 +25,54 @@ class TelegramBotControllerTest {
     private WebTestClient webTestClient;
 
     @MockitoBean
+    private TokenValidator tokenValidator;
+
+    @MockitoBean
     private TelegramBotService telegramBotService;
 
     @Test
     void whenHandledUpdateThenReturnSuccess() {
+        when(tokenValidator.validateToken(SECRET_TOKEN)).thenReturn(Mono.just(SECRET_TOKEN));
         when(telegramBotService.handleUpdate(UPDATE)).thenReturn(Mono.empty());
 
         webTestClient.post()
                 .uri(UPDATE_PATH)
                 .bodyValue(UPDATE)
-                .header(BOT_AUTH_HEADER, "abcd")
+                .header(BOT_AUTH_HEADER, SECRET_TOKEN)
                 .exchange()
                 .expectStatus().isOk();
     }
 
     @Test
     void whenFailedToHandleUpdateThenReturnErrorResponse() {
+        when(tokenValidator.validateToken(SECRET_TOKEN)).thenReturn(Mono.just(SECRET_TOKEN));
         when(telegramBotService.handleUpdate(UPDATE))
                 .thenReturn(Mono.error(new TelegramApiException("Something went wrong")));
 
         webTestClient.post()
                 .uri(UPDATE_PATH)
                 .bodyValue(UPDATE)
-                .header(BOT_AUTH_HEADER, "abcd")
+                .header(BOT_AUTH_HEADER, SECRET_TOKEN)
                 .exchange()
                 .expectStatus().is5xxServerError()
                 .expectBody(ErrorResponse.class)
                 .isEqualTo(new ErrorResponse("Something went wrong"));
+    }
+
+    @Test
+    void whenInvalidTokenThenReturnErrorResponse() {
+        TokenValidationException exception = new TokenValidationException("Secret token is invalid");
+        when(tokenValidator.validateToken(SECRET_TOKEN)).thenReturn(Mono.error(exception));
+
+        webTestClient.post()
+                .uri(UPDATE_PATH)
+                .bodyValue(UPDATE)
+                .header(BOT_AUTH_HEADER, SECRET_TOKEN)
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody(ErrorResponse.class)
+                .isEqualTo(new ErrorResponse("The request is unauthorized"));
+
+        verifyNoInteractions(telegramBotService);
     }
 }

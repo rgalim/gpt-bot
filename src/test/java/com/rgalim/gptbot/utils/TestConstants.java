@@ -10,4 +10,5 @@ public class TestConstants {
             new User(1L, false, "FirstName", "LastName", "username");
     public static final Message MESSAGE = new Message(1, USER, 12345, "Message text");
     public static final Update UPDATE = new Update(1, MESSAGE);
+    public static final String SECRET_TOKEN = "secret";
 }

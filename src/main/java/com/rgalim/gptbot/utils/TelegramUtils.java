@@ -37,8 +37,4 @@ public final class TelegramUtils {
         }
         return new TelegramApiException(GET_UPDATES_ERROR_MESSAGE + error.getMessage());
     }
-
-    public static void validateToken(String token) {
-        // TODO: implement
-    }
 }

@@ -75,6 +75,6 @@ public class TelegramApiClient {
     }
 
     private String getTelegramUrl(String path) {
-        return properties.url() + BOT_PATH + properties.token() + path;
+        return properties.url() + BOT_PATH + properties.botToken() + path;
     }
 }

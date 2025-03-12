@@ -34,7 +34,7 @@ class TelegramApiClientTest {
         mockWebServer.start();
 
         String url = String.format("http://localhost:%s", mockWebServer.getPort());
-        TelegramProperties properties = new TelegramProperties(url, "12345:abcd", 1, 1, 100);
+        TelegramProperties properties = new TelegramProperties(url, "12345:abcd", "secret", 1, 1, 100);
         telegramApiClient = new TelegramApiClient(WebClient.create(url), properties);
     }
 
