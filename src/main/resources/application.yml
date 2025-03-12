@@ -8,7 +8,8 @@ web:
 
 telegram:
   url: ${TELEGRAM_URL}
-  token: ${TELEGRAM_TOKEN}
+  bot-token: ${TELEGRAM_BOT_TOKEN}
+  bot-secret: ${TELEGRAM_BOT_SECRET}
   timeout: 30
   retry-attempts: 2
   retry-backoff: 100
