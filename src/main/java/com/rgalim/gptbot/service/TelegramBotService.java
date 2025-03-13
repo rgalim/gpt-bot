@@ -34,20 +34,9 @@ public class TelegramBotService {
     public Mono<Void> handleUpdate(Update update) {
         Message message = update.message();
         if (message != null && hasText(message.text())) {
-            String text = message.text();
-            if (telegramCommandService.isCommand(text)) {
-                Optional<CommandType> optionalCommandType = CommandType.from(text);
-                if (optionalCommandType.isPresent()) {
-                    String userId = String.valueOf(message.from().id());
-                    Command command = new Command(optionalCommandType.get(), userId, message.text());
-                    return telegramCommandService.handleCommand(command);
-                } else {
-                    log.warn("Command {} is not supported", text);
-                }
-            } else {
-                log.info("Received message from user {}: {}", message.from().username(), message.text());
-                // TODO: implement message handling
-            }
+            return telegramCommandService.isCommand(message.text())
+                    ? handleCommand(message)
+                    : handleMessage(message);
         }
         return Mono.empty();
     }
@@ -61,5 +50,22 @@ public class TelegramBotService {
                     .orElse(lastUpdateId.get());
             lastUpdateId.set(newOffset);
         }
+    }
+
+    private Mono<Void> handleCommand(Message message) {
+        Optional<CommandType> optionalCommandType = CommandType.from(message.text());
+        if (optionalCommandType.isPresent()) {
+            String userId = String.valueOf(message.from().id());
+            Command command = new Command(optionalCommandType.get(), userId, message.text());
+            return telegramCommandService.handleCommand(command);
+        } else {
+            log.warn("Command {} is not supported", message.text());
+        }
+        return Mono.empty();
+    }
+
+    private Mono<Void> handleMessage(Message message) {
+        log.info("Received message from user {}: {}", message.from().username(), message.text());
+        return Mono.empty();
     }
 }
