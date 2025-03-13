@@ -1,4 +1,4 @@
-package com.rgalim.gptbot.config;
+package com.rgalim.gptbot.config.properties;
 
 import lombok.NonNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;

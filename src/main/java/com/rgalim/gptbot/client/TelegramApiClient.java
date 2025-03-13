@@ -1,6 +1,6 @@
 package com.rgalim.gptbot.client;
 
-import com.rgalim.gptbot.config.TelegramProperties;
+import com.rgalim.gptbot.config.properties.TelegramProperties;
 import com.rgalim.gptbot.exception.TelegramApiException;
 import com.rgalim.gptbot.model.telegram.Message;
 import com.rgalim.gptbot.model.telegram.SendMessageRequest;

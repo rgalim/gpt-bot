@@ -1,5 +1,7 @@
 package com.rgalim.gptbot.config;
 
+import com.rgalim.gptbot.config.properties.TelegramProperties;
+import com.rgalim.gptbot.config.properties.WebClientProperties;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

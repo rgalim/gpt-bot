@@ -1,6 +1,6 @@
 package com.rgalim.gptbot.domain;
 
-import com.rgalim.gptbot.config.AuthProperties;
+import com.rgalim.gptbot.config.properties.AuthProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
