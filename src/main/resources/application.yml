@@ -13,3 +13,6 @@ telegram:
   timeout: 30
   retry-attempts: 2
   retry-backoff: 100
+
+auth:
+  users: ${REGISTERED_USERS}
