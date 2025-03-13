@@ -1,6 +1,7 @@
 package com.rgalim.gptbot.controller;
 
 import com.rgalim.gptbot.exception.TokenValidationException;
+import com.rgalim.gptbot.exception.UserValidationException;
 import com.rgalim.gptbot.model.telegram.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,15 @@ public class ExceptionControllerAdvice {
         log.error("Failed to validate token: {}", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse("The request is unauthorized"));
+                .body(new ErrorResponse("Request is unauthorized"));
+    }
+
+    @ExceptionHandler(UserValidationException.class)
+    private ResponseEntity<ErrorResponse> handleUserValidationException(UserValidationException ex) {
+        log.error("{}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse("User is unauthorized"));
     }
 
     @ExceptionHandler(Exception.class)

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import reactor.core.publisher.Mono;
 
 import java.util.Set;
 
@@ -15,12 +16,12 @@ public class AuthService {
 
     private final UserRepository userRepository;
 
-    public boolean isValidUser(String userId) {
+    public Mono<Boolean> isValidUser(String userId) {
         Set<String> users = userRepository.getUsers();
         if (CollectionUtils.isEmpty(users)) {
             log.warn("The list of registered users is empty");
-            return false;
+            return Mono.just(false);
         }
-        return users.contains(userId);
+        return Mono.just(users.contains(userId));
     }
 }

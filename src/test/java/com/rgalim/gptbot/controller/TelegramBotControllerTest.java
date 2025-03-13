@@ -3,6 +3,7 @@ package com.rgalim.gptbot.controller;
 import com.rgalim.gptbot.exception.TelegramApiException;
 import com.rgalim.gptbot.exception.TokenValidationException;
 import com.rgalim.gptbot.model.telegram.ErrorResponse;
+import com.rgalim.gptbot.service.AuthService;
 import com.rgalim.gptbot.service.TelegramBotService;
 import com.rgalim.gptbot.service.TokenValidator;
 import org.junit.jupiter.api.Test;
@@ -28,11 +29,15 @@ class TelegramBotControllerTest {
     private TokenValidator tokenValidator;
 
     @MockitoBean
+    private AuthService authService;
+
+    @MockitoBean
     private TelegramBotService telegramBotService;
 
     @Test
     void whenHandledUpdateThenReturnSuccess() {
         when(tokenValidator.validateToken(SECRET_TOKEN)).thenReturn(Mono.just(SECRET_TOKEN));
+        when(authService.isValidUser("1")).thenReturn(Mono.just(true));
         when(telegramBotService.handleUpdate(UPDATE)).thenReturn(Mono.empty());
 
         webTestClient.post()
@@ -46,6 +51,7 @@ class TelegramBotControllerTest {
     @Test
     void whenFailedToHandleUpdateThenReturnErrorResponse() {
         when(tokenValidator.validateToken(SECRET_TOKEN)).thenReturn(Mono.just(SECRET_TOKEN));
+        when(authService.isValidUser("1")).thenReturn(Mono.just(true));
         when(telegramBotService.handleUpdate(UPDATE))
                 .thenReturn(Mono.error(new TelegramApiException("Something went wrong")));
 
@@ -71,7 +77,25 @@ class TelegramBotControllerTest {
                 .exchange()
                 .expectStatus().isUnauthorized()
                 .expectBody(ErrorResponse.class)
-                .isEqualTo(new ErrorResponse("The request is unauthorized"));
+                .isEqualTo(new ErrorResponse("Request is unauthorized"));
+
+        verifyNoInteractions(telegramBotService);
+        verifyNoInteractions(authService);
+    }
+
+    @Test
+    void whenInvalidUserThenReturnErrorResponse() {
+        when(tokenValidator.validateToken(SECRET_TOKEN)).thenReturn(Mono.just(SECRET_TOKEN));
+        when(authService.isValidUser("1")).thenReturn(Mono.just(false));
+
+        webTestClient.post()
+                .uri(UPDATE_PATH)
+                .bodyValue(UPDATE)
+                .header(BOT_AUTH_HEADER, SECRET_TOKEN)
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody(ErrorResponse.class)
+                .isEqualTo(new ErrorResponse("User is unauthorized"));
 
         verifyNoInteractions(telegramBotService);
     }
