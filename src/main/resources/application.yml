@@ -16,3 +16,8 @@ telegram:
 
 auth:
   users: ${REGISTERED_USERS}
+
+openai:
+  api-key: ${OPENAI_API_KEY}
+  organization-id: ${OPENAI_ORG_ID}
+  project-id: ${OPENAI_PROJECT_ID}
