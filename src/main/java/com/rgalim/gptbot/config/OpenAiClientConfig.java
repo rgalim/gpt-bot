@@ -16,8 +16,6 @@ public class OpenAiClientConfig {
     public OpenAIClientAsync openAIClient(OpenAiProperties properties) {
         return OpenAIOkHttpClientAsync.builder()
                 .apiKey(properties.apiKey())
-                .organization(properties.organizationId())
-                .project(properties.projectId())
                 .build();
     }
 }
