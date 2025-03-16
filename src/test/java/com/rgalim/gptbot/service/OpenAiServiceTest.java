@@ -8,9 +8,11 @@ import com.openai.errors.OpenAIServiceException;
 import com.openai.models.ChatModel;
 import com.openai.models.responses.*;
 import com.openai.services.async.ResponseServiceAsync;
+import com.rgalim.gptbot.config.properties.OpenAiProperties;
+import com.rgalim.gptbot.exception.PromptValidationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.test.StepVerifier;
@@ -20,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.rgalim.gptbot.utils.TestConstants.*;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,8 +34,13 @@ class OpenAiServiceTest {
     @Mock
     private ResponseServiceAsync responseServiceAsync;
 
-    @InjectMocks
     private OpenAiService openAiService;
+
+    @BeforeEach
+    void setUp() {
+        OpenAiProperties openAiProperties = new OpenAiProperties("apiKey", 3L);
+        openAiService = new OpenAiService(openAIClient, openAiProperties);
+    }
 
     @Test
     void whenSentPromptSuccessfullyThenReturnOutputText() {
@@ -144,5 +152,16 @@ class OpenAiServiceTest {
 
         StepVerifier.create(openAiService.sendPrompt(INPUT_PROMPT))
                 .verifyComplete();
+    }
+
+    @Test
+    void whenInvalidPromptThenReturnErrorMono() {
+        String invalidPrompt = "Invalid prompt that exceeds limitation";
+        StepVerifier.create(openAiService.sendPrompt(invalidPrompt))
+                .expectErrorMatches(error -> error instanceof PromptValidationException &&
+                        error.getMessage().equals("Number of tokens exceeds limitation"))
+                .verify();
+
+        verifyNoInteractions(openAIClient);
     }
 }
