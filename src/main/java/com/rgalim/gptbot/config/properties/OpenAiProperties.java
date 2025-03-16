@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "openai")
 public record OpenAiProperties(
-        @NonNull String apiKey
+        @NonNull String apiKey,
+        @NonNull Integer inputTokenLimit
 ) {
 }

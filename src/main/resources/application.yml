@@ -22,3 +22,4 @@ auth:
 
 openai:
   api-key: ${OPENAI_API_KEY}
+  input-token-limit: ${OPENAI_INPUT_TOKEN_LIMIT}

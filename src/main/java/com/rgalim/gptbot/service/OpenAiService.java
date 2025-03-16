@@ -32,6 +32,11 @@ public class OpenAiService {
                 .doOnError(error -> log.error("Failed to send prompt to OpenAI: {}", error.getMessage()));
     }
 
+    public Mono<String> validatePrompt(String prompt) {
+
+        return Mono.just(prompt);
+    }
+
     private String mapToResponseText(Response response) {
         List<ResponseOutputItem> output = response.output();
         if (isEmpty(output)) {
