@@ -1,7 +1,7 @@
 package com.rgalim.gptbot.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rgalim.gptbot.config.TelegramProperties;
+import com.rgalim.gptbot.config.properties.TelegramProperties;
 import com.rgalim.gptbot.model.telegram.*;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;

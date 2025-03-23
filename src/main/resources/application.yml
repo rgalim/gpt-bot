@@ -2,6 +2,9 @@ spring:
   application:
     name: gpt-bot
 
+server:
+  shutdown: graceful
+
 web:
   max-idle-time: 1
   max-life-time: 10
@@ -16,3 +19,7 @@ telegram:
 
 auth:
   users: ${REGISTERED_USERS}
+
+openai:
+  api-key: ${OPENAI_API_KEY}
+  input-token-limit: ${OPENAI_INPUT_TOKEN_LIMIT}

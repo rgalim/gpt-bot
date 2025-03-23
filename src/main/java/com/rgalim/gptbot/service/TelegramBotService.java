@@ -10,7 +10,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.springframework.util.StringUtils.hasText;
@@ -22,9 +21,11 @@ public class TelegramBotService {
 
     private final TelegramApiClient telegramApiClient;
     private final TelegramCommandService telegramCommandService;
+    private final TelegramMessageService telegramMessageService;
 
     private final AtomicLong lastUpdateId = new AtomicLong(0);
 
+    // Get updates method is used in the long-polling mode when webhook is not enabled
     public Flux<UpdatesResponse> getUpdates() {
         return Mono.defer(() -> telegramApiClient.fetchBotUpdates(lastUpdateId))
                 .doOnNext(this::updateOffset)
@@ -34,20 +35,9 @@ public class TelegramBotService {
     public Mono<Void> handleUpdate(Update update) {
         Message message = update.message();
         if (message != null && hasText(message.text())) {
-            String text = message.text();
-            if (telegramCommandService.isCommand(text)) {
-                Optional<CommandType> optionalCommandType = CommandType.from(text);
-                if (optionalCommandType.isPresent()) {
-                    String userId = String.valueOf(message.from().id());
-                    Command command = new Command(optionalCommandType.get(), userId, message.text());
-                    return telegramCommandService.handleCommand(command);
-                } else {
-                    log.warn("Command {} is not supported", text);
-                }
-            } else {
-                log.info("Received message from user {}: {}", message.from().username(), message.text());
-                // TODO: implement message handling
-            }
+            return telegramCommandService.isCommand(message.text())
+                    ? handleCommand(message)
+                    : telegramMessageService.handleMessage(message);
         }
         return Mono.empty();
     }
@@ -61,5 +51,18 @@ public class TelegramBotService {
                     .orElse(lastUpdateId.get());
             lastUpdateId.set(newOffset);
         }
+    }
+
+    private Mono<Void> handleCommand(Message message) {
+        return CommandType.from(message.text())
+                .map(commandType -> {
+                    String userId = String.valueOf(message.from().id());
+                    Command command = new Command(commandType, userId, message.text());
+                    return telegramCommandService.handleCommand(command);
+                })
+                .orElseGet(() -> {
+                    log.warn("Command {} is not supported", message.text());
+                    return Mono.empty();
+                });
     }
 }

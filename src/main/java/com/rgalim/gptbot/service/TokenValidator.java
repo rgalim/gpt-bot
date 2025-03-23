@@ -1,6 +1,6 @@
 package com.rgalim.gptbot.service;
 
-import com.rgalim.gptbot.config.TelegramProperties;
+import com.rgalim.gptbot.config.properties.TelegramProperties;
 import com.rgalim.gptbot.exception.TokenValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

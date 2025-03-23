@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.2.0] - 2025-03-23
+- Implement integration with OpenAI
+
 ## [0.1.2] - 2025-03-13
 - Implement user validation
 

@@ -1,6 +1,6 @@
 package com.rgalim.gptbot;
 
-import com.rgalim.gptbot.config.AuthProperties;
+import com.rgalim.gptbot.config.properties.AuthProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
