@@ -28,6 +28,9 @@ class TelegramBotServiceTest {
     @Mock
     private TelegramCommandService telegramCommandService;
 
+    @Mock
+    private TelegramMessageService telegramMessageService;
+
     @InjectMocks
     private TelegramBotService telegramBotService;
 
@@ -105,6 +108,7 @@ class TelegramBotServiceTest {
         @Test
         void whenTextMessageInUpdateThenHandle() {
             when(telegramCommandService.isCommand("Message text")).thenReturn(false);
+            when(telegramMessageService.handleMessage(MESSAGE)).thenReturn(Mono.empty());
 
             StepVerifier.create(telegramBotService.handleUpdate(UPDATE))
                     .verifyComplete();
@@ -124,6 +128,8 @@ class TelegramBotServiceTest {
 
             StepVerifier.create(telegramBotService.handleUpdate(update))
                     .verifyComplete();
+
+            verifyNoInteractions(telegramMessageService);
         }
 
         @Test
@@ -137,6 +143,7 @@ class TelegramBotServiceTest {
                     .verifyComplete();
 
             verify(telegramCommandService, never()).handleCommand(any());
+            verifyNoInteractions(telegramMessageService);
         }
     }
 }

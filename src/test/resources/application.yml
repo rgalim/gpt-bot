@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: gpt-bot
+
+web:
+  max-idle-time: 1
+  max-life-time: 10
+
+telegram:
+  url: http://telegram-url.com
+  bot-token: botToken
+  bot-secret: botSecret
+  timeout: 30
+  retry-attempts: 2
+  retry-backoff: 100
+
+auth:
+  users: user1,user2
+
+openai:
+  api-key: openAiKey
+  input-token-limit: 10
